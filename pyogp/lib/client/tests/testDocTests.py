@@ -36,15 +36,15 @@ def test_suite():
                 "agent.txt",
                 "login.txt",
                 "caps.txt",
-                "message_handler.txt",
-                package="pyogp.lib.base.tests",
+                "region.txt",
+                package="pyogp.lib.client.tests.doctests",
                 setUp = setUp,
                 tearDown = tearDown,
                 optionflags=optionflags,
                 )
             )
     #suite.addTest(doctest.DocTestSuite('pyogp.lib.base.caps', optionflags=optionflags))
-    suite.addTest(doctest.DocTestSuite('pyogp.lib.base.helpers', optionflags=optionflags))
+    #suite.addTest(doctest.DocTestSuite('pyogp.lib.base.helpers', optionflags=optionflags))
     #suite.addTest(doctest.DocTestSuite('pyogp.lib.base.api', optionflags=optionflags))
 
 
