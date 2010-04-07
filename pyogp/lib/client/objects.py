@@ -22,6 +22,7 @@ import uuid
 import re
 import struct
 import math
+from eventlet import api
 
 # related
 
@@ -213,12 +214,53 @@ class ObjectManager(DataManager):
 
         returns a list of all such known objects
         """
-
+        #first get all the object properties
+        object_ids = []
+        for item in self.object_store:
+            object_ids.append(item.LocalID)
+            
+        self.req_object_properties(object_ids)
+        
         pattern = re.compile(Name)
 
-        matches = [_object for _object in self.object_store if pattern.match(_object.Name)]
+        matches = [_object for _object in self.object_store if (_object.Name != None and pattern.match(_object.Name))]
 
         return matches
+    
+    def req_object_properties(self, object_ids):
+        """get properties for all requested objects"""
+        #obj_FullIds = [_item.FullID for _item in object_ids]
+        obj_props_handler = self.agent.events_handler.register("ObjectSelected")
+        def object_selected(obj_info):
+            #need till all the requested objects properties are received
+            prim = obj_info.payload['object']
+            if prim.LocalID in object_ids:
+                object_ids.remove(prim.LocalID)
+                
+        obj_props_handler.subscribe(object_selected)    
+        self.send_ObjectSelect(self.agent, self.agent.agent_id, self.agent.session_id, object_ids)
+        while object_ids != []:
+            api.sleep(1)
+            
+    def dump_objects(self):
+        for item in self.object_store:
+            print 'Object Name: ', item.__dict__['Name']
+    
+        
+    def send_ObjectSelect(self, agent, AgentID, SessionID, ObjectLocalIDs):
+        """ send an ObjectSelect message to the agent's host simulator
+
+        expects a list of ObjectLocalIDs """
+
+        packet = Message('ObjectSelect',
+                        Block('AgentData',
+                                AgentID = AgentID,
+                                SessionID = SessionID),
+                        *[Block('ObjectData',
+                                ObjectLocalID = ObjectLocalID) for ObjectLocalID in ObjectLocalIDs])
+
+        agent.region.enqueue_message(packet)
+
 
     def find_objects_within_radius(self, radius):
         """ returns objects nearby. returns a list of objects """
@@ -339,7 +381,7 @@ class ObjectManager(DataManager):
             #if self.settings.LOG_VERBOSE and self.settings.ENABLE_OBJECT_LOGGING: logger.debug("Updating an object's attributes. LocalID = %s" % (object_properties['LocalID']))
             _object._update_properties(prim_properties)
         if _object.UpdateFlags & 2 != 0 and self.agent != None:
-
+          
             self.agent.events_handler.handle(AppEvent("ObjectSelected",
                                                       payload = {'object':_object}))
 
@@ -1041,7 +1083,11 @@ class ObjectManager(DataManager):
                                CRC = CRC))
         agent.region.enqueue_message(packet)
 
-
+        def dumpObjects(self):
+            for obj in self.object_store:
+                for attr in dir(obj):
+                    print 'Attr Name: %s, value: %s' % attr, getattr(obj, attr)
+            
 
 class Object(object):
     """ represents an Object
