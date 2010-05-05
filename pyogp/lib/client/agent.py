@@ -1068,7 +1068,75 @@ class Agent(object):
                     self._send_update()
                     self.control_flags &= ~AgentControlFlags.FinishAnim
         
+        
+    def touch(self, objectID):
+        """ Touches an inworld rezz'ed object """
+        self.grab(objectID)
+        self.degrab(objectID)
+      
+   
+    def grab(self, objectID, grabOffset = Vector3(), 
+             uvCoord = Vector3(), stCoord = Vector3(), faceIndex=0,
+             position=Vector3(), normal=Vector3(), binormal=Vector3()):
+             
+        packet = Message('ObjectGrab',
+                        Block('AgentData',
+                            AgentID = self.agent_id,
+                            SessionID = self.session_id),
+                        Block('ObjectData',
+                            LocalID = objectID,
+                            GrabOffset = grabOffset),
+                        [Block('SurfaceInfo',
+                              UVCoord = uvCoord,
+                              STCoord = stCoord,
+                              FaceIndex = faceIndex,
+                              Position = position,
+                              Normal = normal,
+                              Binormal = binormal)])
 
+        self.region.enqueue_message(packet) 
+            
+    def degrab(self, objectID,  
+             uvCoord = Vector3(), stCoord = Vector3(), faceIndex=0,
+             position=Vector3(), normal=Vector3(), binormal=Vector3()):
+            
+        packet = Message('ObjectDeGrab',
+                        Block('AgentData',
+                            AgentID = self.agent_id,
+                            SessionID = self.session_id),
+                        Block('ObjectData',
+                            LocalID = objectID),
+                        [Block('SurfaceInfo',
+                              UVCoord = uvCoord,
+                              STCoord = stCoord,
+                              FaceIndex = faceIndex,
+                              Position = position,
+                              Normal = normal,
+                              Binormal = binormal)])
+
+        self.region.enqueue_message(packet)      
+
+    def grabUpdate(self, objectID, grabPosition = Vector3(), grabOffset = Vector3(),
+             uvCoord = Vector3(), stCoord = Vector3(), faceIndex=0,
+             position=Vector3(), normal=Vector3(), binormal=Vector3()):
+             
+        packet = Message('ObjectGrabUpdate',
+                        Block('AgentData',
+                            AgentID = self.agent_id,
+                            SessionID = self.session_id),
+                        Block('ObjectData',
+                            LocalID = objectID,
+                            GrabOffsetInitial = grabOffset,
+                            GrabPostion = grabPosition),
+                         [Block('SurfaceInfo',
+                              UVCoord = uvCoord,
+                              STCoord = stCoord,
+                              FaceIndex = faceIndex,
+                              Position = position,
+                              Normal = normal,
+                              Binormal = binormal)])
+
+        self.region.enqueue_message(packet) 
 
 class Home(object):
     """ contains the parameters describing an agent's home location as returned in login_response['home'] """
